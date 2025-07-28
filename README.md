@@ -127,7 +127,7 @@ Edit `resource_channel_config.json` to configure Telegram channels:
 {
   "channels": [
     {
-      "id": "chanel_id",
+      "id": "channel_id",
       "name": "channel_name",
       "enable": true
     }

@@ -44,14 +44,16 @@ export async function searchTelegramChannels(
 
 // 检测链接类型
 export function getLinkType(link: string): string {
-  if (link.includes('115')) return '115网盘'
-  if (link.includes('123')) return '123云盘'
-  if (link.includes('189') || link.includes('cloud.189')) return '天翼云盘'
+  if (link.includes('115') || link.includes('115.com')) return '115网盘'
+  if (link.includes('123') || link.includes('123pan')) return '123网盘'
+  if (link.includes('189') || link.includes('cloud.189') || link.includes('caiyun.139.com')) return '天翼云盘'
   if (link.includes('aliyundrive') || link.includes('alipan')) return '阿里云盘'
-  if (link.includes('baidu') || link.includes('pan.baidu')) return '百度网盘'
+  if (link.includes('baidu') || link.includes('pan.baidu') || link.includes('yun.baidu')) return '百度网盘'
+  if (link.includes('lanzou') || link.includes('lanzoui') || link.includes('lanzoux')) return '蓝奏云'
   if (link.includes('pikpak')) return 'Pikpak网盘'
-  if (link.includes('quark')) return '夸克网盘'
+  if (link.includes('quark') || link.includes('pan.quark') || link.includes('drive.uc.cn')) return '夸克网盘'
   if (link.includes('uc')) return 'UC网盘'
+  if (link.includes('weiyun.com')) return '微云'
   if (link.includes('xunlei') || link.includes('pan.xunlei')) return '迅雷网盘'
   return '其他'
 }
