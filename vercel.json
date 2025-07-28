@@ -3,18 +3,9 @@
   "name": "drifting-searcher",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "functions": {
-    "server/index.js": {
-      "maxDuration": 30
-    }
-  },
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/server/index.js"
-    },
-    {
-      "source": "/((?!api).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]
