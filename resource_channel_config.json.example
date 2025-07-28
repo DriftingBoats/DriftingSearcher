@@ -1,0 +1,9 @@
+{
+  "channels": [
+    {
+      "id": "chanel_id",
+      "name": "示范配置",
+      "enable": true
+    }
+  ]
+}
