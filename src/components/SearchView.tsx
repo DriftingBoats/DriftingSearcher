@@ -248,6 +248,15 @@ function SearchView() {
             <div className="no-results">
               <p>未找到相关资源</p>
               <p>请尝试其他关键词或检查频道设置</p>
+              <div className="alternative-suggestion">
+                <p>或者试试其他搜索平台：</p>
+                <button 
+                  className="action-button primary aipan-button"
+                  onClick={() => window.open('https://www.aipan.me/', '_blank', 'noopener,noreferrer')}
+                >
+                  🔍 使用爱盼搜索
+                </button>
+              </div>
             </div>
           ) : (
             Object.entries(searchResults).map(([type, items]) => (
@@ -390,6 +399,43 @@ function SearchView() {
           border-radius: 12px;
           font-size: 11px;
           white-space: nowrap;
+        }
+        
+        .alternative-suggestion {
+          margin-top: 1.5rem;
+          padding: 1rem;
+          background: #f8f9fa;
+          border-radius: 8px;
+          border-left: 4px solid #007bff;
+          text-align: center;
+        }
+        
+        .alternative-suggestion p {
+          margin: 0 0 0.75rem 0;
+          color: #495057;
+          font-size: 0.9rem;
+        }
+        
+        .aipan-button {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border: none;
+          padding: 0.75rem 1.5rem;
+          border-radius: 25px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .aipan-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .aipan-button:active {
+          transform: translateY(0);
         }
       `}</style>
     </div>
