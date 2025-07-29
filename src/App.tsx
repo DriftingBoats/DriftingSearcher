@@ -42,10 +42,7 @@ function App() {
           }
           
           .footer {
-            background: #2d3748;
-            color: white;
-            padding: 2rem 1rem;
-            margin-top: 3rem;
+            color: #999999;
             text-align: center;
           }
           
