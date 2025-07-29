@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import axios from 'axios'
 import { SearchResultItem, GroupedResults } from '../types'
 import { getLinkType, copyToClipboard, openLink } from '../utils/telegram'
@@ -13,7 +13,45 @@ function SearchView() {
   const [searchProgress, setSearchProgress] = useState({ current: 0, total: 0, channel: '' })
   const [totalResults, setTotalResults] = useState(0)
   const [activeChannels, setActiveChannels] = useState<string[]>([])
+  const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({}) // 新增：抽屉展开状态
   const eventSourceRef = useRef<EventSource | null>(null)
+
+  // 网盘类型排序顺序
+  const cloudTypeOrder = [
+    '夸克网盘', '百度网盘', '阿里云盘', '115网盘', '蓝奏云', 
+    '123网盘', '天翼云盘', 'UC网盘', '迅雷网盘', 'Pikpak网盘', '微云', '其他'
+  ]
+
+  // 切换抽屉展开状态
+  const toggleGroup = (type: string) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [type]: !prev[type]
+    }))
+  }
+
+  // 按指定顺序排序搜索结果
+  const getSortedResults = () => {
+    const sortedEntries = Object.entries(searchResults).sort(([typeA], [typeB]) => {
+      const indexA = cloudTypeOrder.indexOf(typeA)
+      const indexB = cloudTypeOrder.indexOf(typeB)
+      return (indexA === -1 ? cloudTypeOrder.length : indexA) - (indexB === -1 ? cloudTypeOrder.length : indexB)
+    })
+    return sortedEntries
+  }
+
+  // 初始化展开状态
+  useEffect(() => {
+    const newExpandedGroups: {[key: string]: boolean} = {}
+    Object.keys(searchResults).forEach(type => {
+      if (expandedGroups[type] === undefined) {
+        newExpandedGroups[type] = true // 默认展开
+      }
+    })
+    if (Object.keys(newExpandedGroups).length > 0) {
+      setExpandedGroups(prev => ({ ...prev, ...newExpandedGroups }))
+    }
+  }, [searchResults])
 
   const handleSearch = async () => {
     if (!query.trim()) {
@@ -259,32 +297,45 @@ function SearchView() {
               </div>
             </div>
           ) : (
-            Object.entries(searchResults).map(([type, items]) => (
+            getSortedResults().map(([type, items]) => (
               <div key={type} className="result-group">
-                <div className="result-group-header">
-                  {type} ({items.length})
-                </div>
-                {items.map((item, index) => (
-                  <div key={`${item.link}-${index}`} className="result-item">
-                    <div className="result-title">
-                      {truncateText(item.title, 100)}
-                    </div>
-                    <div className="result-actions">
-                      <button
-                        className="action-button primary"
-                        onClick={() => openLink(item.link)}
-                      >
-                        打开
-                      </button>
-                      <button
-                        className="action-button"
-                        onClick={() => handleCopy(item.link)}
-                      >
-                        {copiedUrl === item.link ? '已复制' : '复制链接'}
-                      </button>
-                    </div>
+                <div 
+                  className={`result-group-header ${expandedGroups[type] ? 'expanded' : 'collapsed'}`}
+                  onClick={() => toggleGroup(type)}
+                >
+                  <div className="group-title">
+                    {type} ({items.length})
                   </div>
-                ))}
+                  <div className="group-toggle">
+                    {expandedGroups[type] ? '▼' : '►'}
+                  </div>
+                </div>
+                
+                {expandedGroups[type] && (
+                  <div className="result-items-container">
+                    {items.map((item, index) => (
+                      <div key={`${item.link}-${index}`} className="result-item">
+                        <div className="result-title">
+                          {truncateText(item.title, 100)}
+                        </div>
+                        <div className="result-actions">
+                          <button
+                            className="action-button primary"
+                            onClick={() => openLink(item.link)}
+                          >
+                            打开
+                          </button>
+                          <button
+                            className="action-button"
+                            onClick={() => handleCopy(item.link)}
+                          >
+                            {copiedUrl === item.link ? '已复制' : '复制链接'}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))
           )}
@@ -436,6 +487,77 @@ function SearchView() {
         
         .aipan-button:active {
           transform: translateY(0);
+        }
+        
+        /* 抽屉样式 */
+        .result-group {
+          margin-bottom: 1rem;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          overflow: hidden;
+          background: white;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .result-group-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem;
+          background: #f8f9fa;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          border-bottom: 1px solid #e2e8f0;
+          user-select: none;
+        }
+        
+        .result-group-header:hover {
+          background: #e9ecef;
+        }
+        
+        .result-group-header.expanded {
+          background: #e3f2fd;
+        }
+        
+        .result-group-header.collapsed {
+          border-bottom: none;
+        }
+        
+        .group-title {
+          font-weight: 600;
+          font-size: 1rem;
+          color: #2d3748;
+        }
+        
+        .group-toggle {
+          font-size: 0.8rem;
+          color: #4a5568;
+          transition: transform 0.2s ease;
+        }
+        
+        .result-items-container {
+          animation: slideDown 0.3s ease-out;
+        }
+        
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            max-height: 0;
+          }
+          to {
+            opacity: 1;
+            max-height: 1000px;
+          }
+        }
+        
+        .result-item {
+          padding: 1rem;
+          border-bottom: 1px solid #f1f5f9;
+          animation: slideIn 0.3s ease-out;
+        }
+        
+        .result-item:last-child {
+          border-bottom: none;
         }
       `}</style>
     </div>
