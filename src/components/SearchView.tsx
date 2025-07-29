@@ -13,7 +13,8 @@ function SearchView() {
   const [searchProgress, setSearchProgress] = useState({ current: 0, total: 0, channel: '' })
   const [totalResults, setTotalResults] = useState(0)
   const [activeChannels, setActiveChannels] = useState<string[]>([])
-  const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({}) // 新增：抽屉展开状态
+  const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({})
+  const [expandedTexts, setExpandedTexts] = useState<{[key: string]: boolean}>({}) // 新增：抽屉展开状态
   const eventSourceRef = useRef<EventSource | null>(null)
 
   // 网盘类型排序顺序
@@ -27,6 +28,13 @@ function SearchView() {
     setExpandedGroups(prev => ({
       ...prev,
       [type]: !prev[type]
+    }))
+  }
+
+  const toggleTextExpansion = (itemKey: string) => {
+    setExpandedTexts(prev => ({
+      ...prev,
+      [itemKey]: !prev[itemKey]
     }))
   }
 
@@ -322,9 +330,17 @@ function SearchView() {
                           <div className="result-original-text">
                             <details>
                               <summary>查看消息原文</summary>
-                              <div className="original-text-content">
+                              <div className={`original-text-content ${expandedTexts[`${item.link}-${index}`] ? 'expanded' : 'collapsed'}`}>
                                 {item.originalText}
                               </div>
+                              {item.originalText.length > 300 && (
+                                <button 
+                                  className="text-expand-button"
+                                  onClick={() => toggleTextExpansion(`${item.link}-${index}`)}
+                                >
+                                  {expandedTexts[`${item.link}-${index}`] ? '收起' : '展开全文'}
+                                </button>
+                              )}
                             </details>
                           </div>
                         )}
@@ -607,9 +623,35 @@ function SearchView() {
           color: #2d3748;
           white-space: pre-wrap;
           word-wrap: break-word;
+          background: white;
+          transition: max-height 0.3s ease;
+        }
+        
+        .original-text-content.collapsed {
           max-height: 200px;
           overflow-y: auto;
-          background: white;
+        }
+        
+        .original-text-content.expanded {
+          max-height: none;
+          overflow-y: visible;
+        }
+        
+        .text-expand-button {
+          display: block;
+          margin: 0.5rem auto 0.75rem;
+          padding: 0.375rem 0.75rem;
+          background: #4299e1;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          font-size: 0.75rem;
+          cursor: pointer;
+          transition: background-color 0.2s ease;
+        }
+        
+        .text-expand-button:hover {
+          background: #3182ce;
         }
       `}</style>
     </div>
