@@ -334,6 +334,14 @@ function SearchView() {
                           {truncateText(item.title, 100)}
                         </div>
                         <div className="result-actions">
+                          {item.originalText && (
+                            <button 
+                              className="action-button view-text"
+                              onClick={() => openTextModal(item.originalText!)}
+                            >
+                              查看原文
+                            </button>
+                          )}
                           <button
                             className="action-button primary"
                             onClick={() => openLink(item.link)}
@@ -346,14 +354,6 @@ function SearchView() {
                           >
                             {copiedUrl === item.link ? '已复制' : '复制链接'}
                           </button>
-                          {item.originalText && (
-                            <button 
-                              className="action-button view-text"
-                              onClick={() => openTextModal(item.originalText!)}
-                            >
-                              查看原文
-                            </button>
-                          )}
                         </div>
                       </div>
                     ))}
@@ -655,14 +655,22 @@ function SearchView() {
         }
         
         .modal-text {
-          white-space: pre-wrap;
-          word-wrap: break-word;
-          font-family: inherit;
-          font-size: 0.9rem;
-          line-height: 1.6;
-          color: #2d3748;
-          margin: 0;
-        }
+           word-wrap: break-word;
+           font-family: inherit;
+           font-size: 0.9rem;
+           line-height: 1.6;
+           color: #2d3748;
+           margin: 0;
+         }
+         
+         .modal-text a {
+           color: #3182ce;
+           text-decoration: underline;
+         }
+         
+         .modal-text a:hover {
+           color: #2c5aa0;
+         }
       `}</style>
       
       {/* 弹窗显示原文 */}
@@ -674,8 +682,8 @@ function SearchView() {
               <button className="modal-close" onClick={closeModal}>×</button>
             </div>
             <div className="modal-body">
-              <pre className="modal-text">{modalText}</pre>
-            </div>
+               <div className="modal-text" dangerouslySetInnerHTML={{__html: modalText.replace(/\n/g, '<br>').replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')}} />
+             </div>
           </div>
         </div>
       )}
