@@ -14,7 +14,8 @@ function SearchView() {
   const [totalResults, setTotalResults] = useState(0)
   const [activeChannels, setActiveChannels] = useState<string[]>([])
   const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({})
-  const [expandedTexts, setExpandedTexts] = useState<{[key: string]: boolean}>({}) // 新增：抽屉展开状态
+  const [modalText, setModalText] = useState<string>('') // 弹窗显示的文本
+  const [isModalOpen, setIsModalOpen] = useState(false) // 弹窗开关状态
   const eventSourceRef = useRef<EventSource | null>(null)
 
   // 网盘类型排序顺序
@@ -31,11 +32,16 @@ function SearchView() {
     }))
   }
 
-  const toggleTextExpansion = (itemKey: string) => {
-    setExpandedTexts(prev => ({
-      ...prev,
-      [itemKey]: !prev[itemKey]
-    }))
+  // 打开弹窗显示原文
+  const openTextModal = (text: string) => {
+    setModalText(text)
+    setIsModalOpen(true)
+  }
+
+  // 关闭弹窗
+  const closeModal = () => {
+    setIsModalOpen(false)
+    setModalText('')
   }
 
   // 按指定顺序排序搜索结果
@@ -326,24 +332,6 @@ function SearchView() {
                         <div className="result-title">
                           {truncateText(item.title, 100)}
                         </div>
-                        {item.originalText && (
-                          <div className="result-original-text">
-                            <details>
-                              <summary>查看消息原文</summary>
-                              <div className={`original-text-content ${expandedTexts[`${item.link}-${index}`] ? 'expanded' : 'collapsed'}`}>
-                                {item.originalText}
-                              </div>
-                            </details>
-                            {item.originalText.length > 300 && (
-                              <button 
-                                className="text-expand-button"
-                                onClick={() => toggleTextExpansion(`${item.link}-${index}`)}
-                              >
-                                {expandedTexts[`${item.link}-${index}`] ? '收起' : '展开全文'}
-                              </button>
-                            )}
-                          </div>
-                        )}
                         <div className="result-actions">
                           <button
                             className="action-button primary"
@@ -357,6 +345,14 @@ function SearchView() {
                           >
                             {copiedUrl === item.link ? '已复制' : '复制链接'}
                           </button>
+                          {item.originalText && (
+                            <button 
+                              className="action-button"
+                              onClick={() => openTextModal(item.originalText!)}
+                            >
+                              查看原文
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -586,75 +582,102 @@ function SearchView() {
           border-bottom: none;
         }
         
-        .result-original-text {
-          margin: 0.75rem 0;
+        .view-text-btn {
+          background: #805ad5;
+          color: white;
         }
         
-        .result-original-text details {
-          border: 1px solid #e2e8f0;
-          border-radius: 6px;
-          padding: 0;
-          background: #f8fafc;
+        .view-text-btn:hover {
+          background: #6b46c1;
         }
         
-        .result-original-text summary {
-          padding: 0.5rem 0.75rem;
-          cursor: pointer;
-          font-size: 0.875rem;
-          color: #4a5568;
-          background: #f1f5f9;
-          border-radius: 6px 6px 0 0;
-          transition: background-color 0.2s ease;
+        /* 弹窗样式 */
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
         }
         
-        .result-original-text summary:hover {
-          background: #e2e8f0;
+        .modal-content {
+          background: white;
+          border-radius: 8px;
+          max-width: 90vw;
+          max-height: 90vh;
+          width: 600px;
+          display: flex;
+          flex-direction: column;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         }
         
-        .result-original-text details[open] summary {
-          border-radius: 6px 6px 0 0;
+        .modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem 1.5rem;
           border-bottom: 1px solid #e2e8f0;
         }
         
-        .original-text-content {
-          padding: 0.75rem;
-          font-size: 0.875rem;
-          line-height: 1.5;
+        .modal-header h3 {
+          margin: 0;
           color: #2d3748;
+        }
+        
+        .modal-close {
+          background: none;
+          border: none;
+          font-size: 1.5rem;
+          cursor: pointer;
+          color: #718096;
+          padding: 0;
+          width: 30px;
+          height: 30px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .modal-close:hover {
+          color: #2d3748;
+        }
+        
+        .modal-body {
+          padding: 1.5rem;
+          overflow-y: auto;
+          flex: 1;
+        }
+        
+        .modal-text {
           white-space: pre-wrap;
           word-wrap: break-word;
-          background: white;
-          transition: max-height 0.3s ease;
-        }
-        
-        .original-text-content.collapsed {
-          max-height: 200px;
-          overflow-y: auto;
-        }
-        
-        .original-text-content.expanded {
-          max-height: none;
-          overflow-y: visible;
-        }
-        
-        .text-expand-button {
-          display: block;
-          margin: 0.5rem auto 0;
-          padding: 0.375rem 0.75rem;
-          background: #4299e1;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          font-size: 0.75rem;
-          cursor: pointer;
-          transition: background-color 0.2s ease;
-          width: fit-content;
-        }
-        
-        .text-expand-button:hover {
-          background: #3182ce;
+          font-family: inherit;
+          font-size: 0.9rem;
+          line-height: 1.6;
+          color: #2d3748;
+          margin: 0;
         }
       `}</style>
+      
+      {/* 弹窗显示原文 */}
+      {isModalOpen && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>消息原文</h3>
+              <button className="modal-close" onClick={closeModal}>×</button>
+            </div>
+            <div className="modal-body">
+              <pre className="modal-text">{modalText}</pre>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
