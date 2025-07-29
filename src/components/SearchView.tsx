@@ -192,7 +192,8 @@ function SearchView() {
               title: result.title,
               link: result.link,
               datetime: result.datetime,
-              channel: result.channel
+              channel: result.channel,
+              originalText: result.originalText
             })
           }
           
@@ -347,7 +348,7 @@ function SearchView() {
                           </button>
                           {item.originalText && (
                             <button 
-                              className="action-btn view-text-btn"
+                              className="action-button view-text"
                               onClick={() => openTextModal(item.originalText!)}
                             >
                               查看原文
@@ -582,14 +583,14 @@ function SearchView() {
           border-bottom: none;
         }
         
-        .view-text-btn {
-          background: #805ad5;
-          color: white;
-        }
-        
-        .view-text-btn:hover {
-          background: #6b46c1;
-        }
+        .view-text {
+           background: #805ad5;
+           color: white;
+         }
+         
+         .view-text:hover {
+           background: #6b46c1;
+         }
         
         /* 弹窗样式 */
         .modal-overlay {
