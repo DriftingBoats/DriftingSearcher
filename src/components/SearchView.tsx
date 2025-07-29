@@ -333,15 +333,15 @@ function SearchView() {
                               <div className={`original-text-content ${expandedTexts[`${item.link}-${index}`] ? 'expanded' : 'collapsed'}`}>
                                 {item.originalText}
                               </div>
-                              {item.originalText.length > 300 && (
-                                <button 
-                                  className="text-expand-button"
-                                  onClick={() => toggleTextExpansion(`${item.link}-${index}`)}
-                                >
-                                  {expandedTexts[`${item.link}-${index}`] ? '收起' : '展开全文'}
-                                </button>
-                              )}
                             </details>
+                            {item.originalText.length > 300 && (
+                              <button 
+                                className="text-expand-button"
+                                onClick={() => toggleTextExpansion(`${item.link}-${index}`)}
+                              >
+                                {expandedTexts[`${item.link}-${index}`] ? '收起' : '展开全文'}
+                              </button>
+                            )}
                           </div>
                         )}
                         <div className="result-actions">
@@ -639,7 +639,7 @@ function SearchView() {
         
         .text-expand-button {
           display: block;
-          margin: 0.5rem auto 0.75rem;
+          margin: 0.5rem auto 0;
           padding: 0.375rem 0.75rem;
           background: #4299e1;
           color: white;
@@ -648,6 +648,7 @@ function SearchView() {
           font-size: 0.75rem;
           cursor: pointer;
           transition: background-color 0.2s ease;
+          width: fit-content;
         }
         
         .text-expand-button:hover {
