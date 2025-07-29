@@ -347,7 +347,7 @@ function SearchView() {
                           </button>
                           {item.originalText && (
                             <button 
-                              className="action-button"
+                              className="action-btn view-text-btn"
                               onClick={() => openTextModal(item.originalText!)}
                             >
                               查看原文
