@@ -175,7 +175,8 @@ function parseSearchResults(html, channelId, channelName) {
           title,
           datetime,
           links,
-          channel: channelName
+          channel: channelName,
+          originalText: textContent
         })
       }
     }

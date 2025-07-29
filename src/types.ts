@@ -10,6 +10,7 @@ export interface SearchResultItem {
   title: string
   link: string
   datetime?: string
+  originalText?: string
 }
 
 export interface TelegramSearchResult {

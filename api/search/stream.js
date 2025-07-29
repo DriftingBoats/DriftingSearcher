@@ -95,7 +95,8 @@ export default async function handler(req, res) {
                 link,
                 datetime: result.datetime,
                 channel: result.channel,
-                type: getLinkType(link)
+                type: getLinkType(link),
+                originalText: result.originalText
               }
               
               uniqueResultsMap.set(link, newResult)

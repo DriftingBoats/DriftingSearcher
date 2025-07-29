@@ -161,7 +161,6 @@ Adjust search parameters in `server/services/telegramService.js`:
 - `GET /health` - Health check
 - `POST /api/search` - Standard search
 - `POST /api/search/stream` - Streaming search with real-time updates
-- `GET /api/channels/stats` - Channel statistics
 
 ## 🐳 Docker Deployment
 

@@ -318,6 +318,16 @@ function SearchView() {
                         <div className="result-title">
                           {truncateText(item.title, 100)}
                         </div>
+                        {item.originalText && (
+                          <div className="result-original-text">
+                            <details>
+                              <summary>查看消息原文</summary>
+                              <div className="original-text-content">
+                                {item.originalText}
+                              </div>
+                            </details>
+                          </div>
+                        )}
                         <div className="result-actions">
                           <button
                             className="action-button primary"
@@ -558,6 +568,48 @@ function SearchView() {
         
         .result-item:last-child {
           border-bottom: none;
+        }
+        
+        .result-original-text {
+          margin: 0.75rem 0;
+        }
+        
+        .result-original-text details {
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          padding: 0;
+          background: #f8fafc;
+        }
+        
+        .result-original-text summary {
+          padding: 0.5rem 0.75rem;
+          cursor: pointer;
+          font-size: 0.875rem;
+          color: #4a5568;
+          background: #f1f5f9;
+          border-radius: 6px 6px 0 0;
+          transition: background-color 0.2s ease;
+        }
+        
+        .result-original-text summary:hover {
+          background: #e2e8f0;
+        }
+        
+        .result-original-text details[open] summary {
+          border-radius: 6px 6px 0 0;
+          border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .original-text-content {
+          padding: 0.75rem;
+          font-size: 0.875rem;
+          line-height: 1.5;
+          color: #2d3748;
+          white-space: pre-wrap;
+          word-wrap: break-word;
+          max-height: 200px;
+          overflow-y: auto;
+          background: white;
         }
       `}</style>
     </div>
