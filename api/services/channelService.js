@@ -13,8 +13,10 @@ export async function getChannelConfig() {
   // 优先使用环境变量配置
   if (process.env.TELEGRAM_CHANNELS) {
     try {
-      const channels = JSON.parse(process.env.TELEGRAM_CHANNELS)
-      return Array.isArray(channels) ? channels : []
+      const parsed = JSON.parse(process.env.TELEGRAM_CHANNELS)
+      // 支持纯数组格式 [...] 和对象格式 {"channels":[...]}
+      const channels = Array.isArray(parsed) ? parsed : (parsed.channels || [])
+      return channels
     } catch (error) {
       console.error('解析环境变量TELEGRAM_CHANNELS失败:', error)
     }
