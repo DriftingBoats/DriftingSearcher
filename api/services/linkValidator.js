@@ -14,6 +14,12 @@ function extractQuarkPwdId(url) {
  * Returns true if valid, false if definitively expired/deleted (code 41006).
  */
 async function validateQuarkLink(url) {
+  const cookie = process.env.QUARK_COOKIE || ''
+  // Without a valid session cookie, the token API returns 41006 for ALL shares
+  // (including valid ones), making it impossible to distinguish deleted from existing.
+  // Skip validation entirely when no cookie is configured.
+  if (!cookie) return true
+
   const pwdId = extractQuarkPwdId(url)
   if (!pwdId) return true // can't parse → keep
 
@@ -26,7 +32,8 @@ async function validateQuarkLink(url) {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Content-Type': 'application/json',
-          'Referer': 'https://pan.quark.cn/'
+          'Referer': 'https://pan.quark.cn/',
+          'Cookie': cookie
         },
         validateStatus: () => true
       }
