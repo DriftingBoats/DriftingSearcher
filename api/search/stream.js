@@ -1,6 +1,5 @@
 import { searchTelegramChannels } from '../services/telegramService.js'
 import { getEnabledChannels } from '../services/channelService.js'
-import { validateLinks } from '../services/linkValidator.js'
 import { search as pan666Search } from '../services/plugins/pan666.js'
 import { search as pansearchSearch } from '../services/plugins/pansearch.js'
 
@@ -201,31 +200,6 @@ export default async function handler(req, res) {
       runWithConcurrency(channelTasks),
       Promise.allSettled(pluginPromises)
     ])
-
-    // 校验夸克链接有效性（仅在配置了 QUARK_COOKIE 时运行，避免未登录误报）
-    const quarkLinks = Array.from(uniqueResultsMap.keys()).filter(l => l.includes('pan.quark.cn'))
-    if (process.env.QUARK_COOKIE && quarkLinks.length > 0) {
-      res.write(`data: ${JSON.stringify({
-        type: 'validation_begin',
-        total: quarkLinks.length
-      })}\n\n`)
-      let validated = 0
-      await validateLinks(Array.from(uniqueResultsMap.keys()), (link, valid) => {
-        validated++
-        if (!valid) {
-          uniqueResultsMap.delete(link)
-          res.write(`data: ${JSON.stringify({
-            type: 'validation_fail',
-            link
-          })}\n\n`)
-        }
-        res.write(`data: ${JSON.stringify({
-          type: 'validation_progress',
-          done: validated,
-          total: quarkLinks.length
-        })}\n\n`)
-      })
-    }
 
     // 发送搜索完成事件
     res.write(`data: ${JSON.stringify({
