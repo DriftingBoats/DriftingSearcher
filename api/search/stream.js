@@ -1,6 +1,13 @@
 import { searchTelegramChannels } from '../services/telegramService.js'
 import { getEnabledChannels } from '../services/channelService.js'
 import { validateLinks } from '../services/linkValidator.js'
+import { search as pan666Search } from '../services/plugins/pan666.js'
+import { search as pansearchSearch } from '../services/plugins/pansearch.js'
+
+const PLUGINS = [
+  { name: 'pan666.net', search: pan666Search },
+  { name: 'pansearch.me', search: pansearchSearch }
+]
 
 function getLinkType(link) {
   if (link.includes('115') || link.includes('115.com')) return '115网盘'
@@ -59,15 +66,45 @@ export default async function handler(req, res) {
     res.write(`data: ${JSON.stringify({
       type: 'start',
       query,
-      totalChannels: enabledChannels.length
+      totalChannels: enabledChannels.length + PLUGINS.length
     })}\n\n`)
     
     const uniqueResultsMap = new Map()
     let totalResults = 0
-    
-    // 并发搜索所有频道，实现先搜索到的结果先显示
+
+    // 并发搜索所有频道和插件，实现先搜索到的结果先显示
     let completedChannels = 0
-    
+    const totalSources = enabledChannels.length + PLUGINS.length
+
+    // 公共结果处理函数
+    const processResults = (results, sourceName) => {
+      for (const result of results) {
+        if (!result.links || result.links.length === 0) continue
+        for (const link of result.links) {
+          if (link.includes('t.me')) continue
+          const existing = uniqueResultsMap.get(link)
+          const currentTime = new Date(result.datetime).getTime()
+          if (!existing || currentTime > new Date(existing.datetime || '').getTime()) {
+            const newResult = {
+              title: result.title,
+              link,
+              datetime: result.datetime,
+              channel: result.channel,
+              type: getLinkType(link),
+              originalText: result.originalText
+            }
+            uniqueResultsMap.set(link, newResult)
+            res.write(`data: ${JSON.stringify({
+              type: 'result',
+              result: newResult,
+              totalResults: uniqueResultsMap.size
+            })}\n\n`)
+            totalResults = uniqueResultsMap.size
+          }
+        }
+      }
+    }
+
     // 创建所有频道的搜索Promise
     const searchPromises = enabledChannels.map(async (channel) => {
       try {
@@ -79,75 +116,73 @@ export default async function handler(req, res) {
         
         // 搜索单个频道
         const channelResults = await searchTelegramChannels(query.trim(), [channel])
-        
-        // 处理该频道的结果
-        for (const result of channelResults) {
-          if (!result.links || result.links.length === 0) continue
-          
-          for (const link of result.links) {
-            if (link.includes('t.me')) continue // 跳过 Telegram 链接
-            
-            const existing = uniqueResultsMap.get(link)
-            const currentTime = new Date(result.datetime).getTime()
-            
-            if (!existing || currentTime > new Date(existing.datetime || '').getTime()) {
-              const newResult = {
-                title: result.title,
-                link,
-                datetime: result.datetime,
-                channel: result.channel,
-                type: getLinkType(link),
-                originalText: result.originalText
-              }
-              
-              uniqueResultsMap.set(link, newResult)
-              
-              // 实时发送新结果
-              res.write(`data: ${JSON.stringify({
-                type: 'result',
-                result: newResult,
-                totalResults: uniqueResultsMap.size
-              })}\n\n`)
-              
-              totalResults = uniqueResultsMap.size
-            }
-          }
-        }
-        
+        processResults(channelResults, channel.name)
+
         // 频道搜索完成
         completedChannels++
         res.write(`data: ${JSON.stringify({
           type: 'progress',
           currentChannel: channel.name,
           progress: completedChannels,
-          total: enabledChannels.length,
+          total: totalSources,
           completed: true
         })}\n\n`)
-        
+
       } catch (error) {
         console.error(`搜索频道 ${channel.name} 失败:`, error)
         completedChannels++
-        
-        // 发送错误信息
         res.write(`data: ${JSON.stringify({
           type: 'error',
           channel: channel.name,
           error: error.message
         })}\n\n`)
-        
-        // 发送进度更新
         res.write(`data: ${JSON.stringify({
           type: 'progress',
           currentChannel: channel.name,
           progress: completedChannels,
-          total: enabledChannels.length,
+          total: totalSources,
           completed: true
         })}\n\n`)
       }
     })
-    
-    // 等待所有搜索完成
-    await Promise.allSettled(searchPromises)
+
+    // 创建插件搜索Promise
+    const pluginPromises = PLUGINS.map(async (plugin) => {
+      res.write(`data: ${JSON.stringify({
+        type: 'channel_start',
+        channel: plugin.name
+      })}\n\n`)
+      try {
+        const pluginResults = await plugin.search(query.trim())
+        processResults(pluginResults, plugin.name)
+        completedChannels++
+        res.write(`data: ${JSON.stringify({
+          type: 'progress',
+          currentChannel: plugin.name,
+          progress: completedChannels,
+          total: totalSources,
+          completed: true
+        })}\n\n`)
+      } catch (error) {
+        console.error(`插件 ${plugin.name} 搜索失败:`, error)
+        completedChannels++
+        res.write(`data: ${JSON.stringify({
+          type: 'error',
+          channel: plugin.name,
+          error: error.message
+        })}\n\n`)
+        res.write(`data: ${JSON.stringify({
+          type: 'progress',
+          currentChannel: plugin.name,
+          progress: completedChannels,
+          total: totalSources,
+          completed: true
+        })}\n\n`)
+      }
+    })
+
+    // 等待所有搜索完成（频道 + 插件）
+    await Promise.allSettled([...searchPromises, ...pluginPromises])
 
     // 校验夸克链接有效性
     const allLinks = Array.from(uniqueResultsMap.keys())
