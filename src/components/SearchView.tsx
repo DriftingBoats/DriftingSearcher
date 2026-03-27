@@ -132,6 +132,8 @@ function SearchView() {
       }
     } finally {
       setIsSearching(false)
+      // 即使服务端超时未发 complete 事件，只要搜到了结果就展示
+      setHasSearched(true)
     }
   }
 
