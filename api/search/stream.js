@@ -1,5 +1,6 @@
 import { searchTelegramChannels } from '../services/telegramService.js'
 import { getEnabledChannels } from '../services/channelService.js'
+import { validateLinks } from '../services/linkValidator.js'
 
 function getLinkType(link) {
   if (link.includes('115') || link.includes('115.com')) return '115网盘'
@@ -147,15 +148,44 @@ export default async function handler(req, res) {
     
     // 等待所有搜索完成
     await Promise.allSettled(searchPromises)
-    
+
+    // 校验夸克链接有效性
+    const allLinks = Array.from(uniqueResultsMap.keys())
+    const quarkLinks = allLinks.filter(l => l.includes('pan.quark.cn'))
+
+    if (quarkLinks.length > 0) {
+      res.write(`data: ${JSON.stringify({
+        type: 'validation_begin',
+        total: quarkLinks.length
+      })}\n\n`)
+
+      let validated = 0
+      await validateLinks(allLinks, (link, valid) => {
+        validated++
+        if (!valid) {
+          uniqueResultsMap.delete(link)
+          totalResults = uniqueResultsMap.size
+          res.write(`data: ${JSON.stringify({
+            type: 'validation_fail',
+            link
+          })}\n\n`)
+        }
+        res.write(`data: ${JSON.stringify({
+          type: 'validation_progress',
+          done: validated,
+          total: quarkLinks.length
+        })}\n\n`)
+      })
+    }
+
     // 发送搜索完成事件
     res.write(`data: ${JSON.stringify({
       type: 'complete',
       query,
-      totalResults,
+      totalResults: uniqueResultsMap.size,
       channelsSearched: enabledChannels.length
     })}\n\n`)
-    
+
     res.end()
     
   } catch (error) {

@@ -16,6 +16,8 @@ function SearchView() {
   const [expandedGroups, setExpandedGroups] = useState<{[key: string]: boolean}>({})
   const [modalText, setModalText] = useState<string>('')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isValidating, setIsValidating] = useState(false)
+  const [validationProgress, setValidationProgress] = useState({ done: 0, total: 0 })
   const eventSourceRef = useRef<EventSource | null>(null)
 
   // 网盘类型排序顺序
@@ -73,6 +75,8 @@ function SearchView() {
     }
 
     setIsSearching(true)
+    setIsValidating(false)
+    setValidationProgress({ done: 0, total: 0 })
     setSearchResults({})
     setHasSearched(false)
     setSearchProgress({ current: 0, total: 0, channel: '' })
@@ -185,7 +189,28 @@ function SearchView() {
         })
         break
 
+      case 'validation_begin':
+        setIsValidating(true)
+        setValidationProgress({ done: 0, total: data.total })
+        break
+
+      case 'validation_progress':
+        setValidationProgress({ done: data.done, total: data.total })
+        break
+
+      case 'validation_fail':
+        setSearchResults(prev => {
+          const next = { ...prev }
+          for (const type of Object.keys(next)) {
+            next[type] = next[type].filter(item => item.link !== data.link)
+            if (next[type].length === 0) delete next[type]
+          }
+          return next
+        })
+        break
+
       case 'complete':
+        setIsValidating(false)
         setHasSearched(true)
         setSearchProgress({ current: data.channelsSearched, total: data.channelsSearched, channel: '' })
         if (data.totalResults === 0) {
@@ -287,6 +312,13 @@ function SearchView() {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {isValidating && (
+        <div className="validation-banner">
+          <span className="validation-spinner"></span>
+          正在验证夸克链接有效性 ({validationProgress.done}/{validationProgress.total})…
         </div>
       )}
 
