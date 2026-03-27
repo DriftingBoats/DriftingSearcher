@@ -5,8 +5,6 @@ function App() {
   return (
     <div className="app">
       <header className="header">
-        <div className="header-orb-1"></div>
-        <div className="header-orb-2"></div>
         <div className="header-content">
           <h1>DriftingSearcher</h1>
           <p className="subtitle">智能网盘资源搜索引擎</p>
