@@ -1,6 +1,5 @@
 import { searchTelegramChannels } from '../services/telegramService.js'
 import { getEnabledChannels } from '../services/channelService.js'
-import { validateLinks } from '../services/linkValidator.js'
 
 function getLinkType(link) {
   if (link.includes('115') || link.includes('115.com')) return '115网盘'
@@ -148,26 +147,7 @@ export default async function handler(req, res) {
     
     // 等待所有搜索完成
     await Promise.allSettled(searchPromises)
-
-    // ── 链接校验阶段 ──────────────────────────────────────
-    const allLinks = Array.from(uniqueResultsMap.keys())
-
-    if (allLinks.length > 0) {
-      res.write(`data: ${JSON.stringify({
-        type: 'validation_begin',
-        total: allLinks.length
-      })}\n\n`)
-
-      await validateLinks(allLinks, (link, valid) => {
-        if (!valid) {
-          res.write(`data: ${JSON.stringify({
-            type: 'validation_fail',
-            link
-          })}\n\n`)
-        }
-      })
-    }
-
+    
     // 发送搜索完成事件
     res.write(`data: ${JSON.stringify({
       type: 'complete',
@@ -175,7 +155,7 @@ export default async function handler(req, res) {
       totalResults,
       channelsSearched: enabledChannels.length
     })}\n\n`)
-
+    
     res.end()
     
   } catch (error) {
