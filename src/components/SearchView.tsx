@@ -329,7 +329,7 @@ function SearchView() {
 
                 {expandedGroups[type] && (
                   <div className="result-items-container">
-                    {items.map((item, index) => (
+                    {[...items].sort((a, b) => new Date(b.datetime || 0).getTime() - new Date(a.datetime || 0).getTime()).map((item, index) => (
                       <div key={`${item.link}-${index}`} className="result-item">
                         <div className="result-title">
                           {truncateText(item.title, 100)}

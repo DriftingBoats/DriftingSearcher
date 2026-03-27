@@ -75,10 +75,21 @@ export default async function handler(req, res) {
     let completedChannels = 0
     const totalSources = enabledChannels.length + PLUGINS.length
 
+    // 相关性过滤：提取 query 中的有效字符（CJK + 字母数字），要求结果覆盖率 >= 70%
+    const queryChars = [...new Set(query.replace(/\s+/g, '').split(''))]
+      .filter(c => /[\u4e00-\u9fff\w]/i.test(c))
+    const isRelevant = (result) => {
+      if (queryChars.length === 0) return true
+      const haystack = (result.title + ' ' + (result.originalText || '')).toLowerCase()
+      const matched = queryChars.filter(c => haystack.includes(c.toLowerCase())).length
+      return matched / queryChars.length >= 0.7
+    }
+
     // 公共结果处理函数
     const processResults = (results, sourceName) => {
       for (const result of results) {
         if (!result.links || result.links.length === 0) continue
+        if (!isRelevant(result)) continue  // 过滤低相关性结果
         for (const link of result.links) {
           if (link.includes('t.me')) continue
           const existing = uniqueResultsMap.get(link)
