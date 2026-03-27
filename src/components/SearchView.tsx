@@ -251,10 +251,6 @@ function SearchView() {
         </button>
       </div>
 
-      <div className="search-info">
-        <p style={{margin: 0}}>智能搜索多个 Telegram 频道中的网盘资源</p>
-      </div>
-
       {isSearching && (
         <div className="loading">
           <div className="spinner"></div>
