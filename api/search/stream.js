@@ -1,6 +1,5 @@
 import { searchTelegramChannels } from '../services/telegramService.js'
 import { getEnabledChannels } from '../services/channelService.js'
-import { validateLinks } from '../services/linkValidator.js'
 import { search as pan666Search } from '../services/plugins/pan666.js'
 import { search as pansearchSearch } from '../services/plugins/pansearch.js'
 
@@ -105,8 +104,23 @@ export default async function handler(req, res) {
       }
     }
 
-    // 创建所有频道的搜索Promise
-    const searchPromises = enabledChannels.map(async (channel) => {
+    // 并发限制器：最多同时运行 CONCURRENCY 个频道请求，避免 Telegram 限流
+    const CONCURRENCY = 10
+    const runWithConcurrency = async (tasks) => {
+      const results = []
+      let index = 0
+      const workers = Array.from({ length: Math.min(CONCURRENCY, tasks.length) }, async () => {
+        while (index < tasks.length) {
+          const taskIndex = index++
+          results[taskIndex] = await tasks[taskIndex]().catch(e => e)
+        }
+      })
+      await Promise.all(workers)
+      return results
+    }
+
+    // 创建所有频道的搜索任务（延迟执行）
+    const channelTasks = enabledChannels.map((channel) => async () => {
       try {
         // 发送开始搜索该频道的信息
         res.write(`data: ${JSON.stringify({
@@ -181,37 +195,11 @@ export default async function handler(req, res) {
       }
     })
 
-    // 等待所有搜索完成（频道 + 插件）
-    await Promise.allSettled([...searchPromises, ...pluginPromises])
-
-    // 校验夸克链接有效性
-    const allLinks = Array.from(uniqueResultsMap.keys())
-    const quarkLinks = allLinks.filter(l => l.includes('pan.quark.cn'))
-
-    if (quarkLinks.length > 0) {
-      res.write(`data: ${JSON.stringify({
-        type: 'validation_begin',
-        total: quarkLinks.length
-      })}\n\n`)
-
-      let validated = 0
-      await validateLinks(allLinks, (link, valid) => {
-        validated++
-        if (!valid) {
-          uniqueResultsMap.delete(link)
-          totalResults = uniqueResultsMap.size
-          res.write(`data: ${JSON.stringify({
-            type: 'validation_fail',
-            link
-          })}\n\n`)
-        }
-        res.write(`data: ${JSON.stringify({
-          type: 'validation_progress',
-          done: validated,
-          total: quarkLinks.length
-        })}\n\n`)
-      })
-    }
+    // 等待所有搜索完成：频道限流并发 + 插件全并发
+    await Promise.all([
+      runWithConcurrency(channelTasks),
+      Promise.allSettled(pluginPromises)
+    ])
 
     // 发送搜索完成事件
     res.write(`data: ${JSON.stringify({
