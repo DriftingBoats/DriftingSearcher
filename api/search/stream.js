@@ -75,14 +75,13 @@ export default async function handler(req, res) {
     let completedChannels = 0
     const totalSources = enabledChannels.length + PLUGINS.length
 
-    // 相关性过滤：提取 query 中的有效字符（CJK + 字母数字），要求结果覆盖率 >= 70%
-    const queryChars = [...new Set(query.replace(/\s+/g, '').split(''))]
-      .filter(c => /[\u4e00-\u9fff\w]/i.test(c))
+    // 精确相关性过滤：query 去空格后必须作为完整子串出现在标题或原文中
+    const normalizedQuery = query.replace(/\s+/g, '').toLowerCase()
     const isRelevant = (result) => {
-      if (queryChars.length === 0) return true
-      const haystack = (result.title + ' ' + (result.originalText || '')).toLowerCase()
-      const matched = queryChars.filter(c => haystack.includes(c.toLowerCase())).length
-      return matched / queryChars.length >= 0.7
+      if (!normalizedQuery) return true
+      const haystack = (result.title + ' ' + (result.originalText || ''))
+        .replace(/\s+/g, '').toLowerCase()
+      return haystack.includes(normalizedQuery)
     }
 
     // 公共结果处理函数
